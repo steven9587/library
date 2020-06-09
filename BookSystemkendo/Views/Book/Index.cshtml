@@ -1,0 +1,524 @@
+﻿@{
+    ViewBag.Title = "Index";
+    if (ViewBag.user == "manager")
+    {
+        Layout = "~/Views/Shared/_Layout_logout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+}
+
+<h2 style="font-family:Microsoft JhengHei;">圖書維護</h2>
+
+<div class="form-horizontal">
+    <!--margin-top 跟上面的間距 margin-bottom 跟下面的間距-->
+    <div class="form-group" style="margin-bottom:20px;margin-top:20px">
+        <label class="col-md-2 control-label">書名</label>
+        <div class="col-md-10">
+            <input id="book_name" class="form-control" />
+        </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px">
+        <label class="col-md-2 control-label">圖書類別</label>
+        <div class="col-md-10">
+            <select id="dropdown_classname"></select>
+        </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px">
+        <label class="col-md-2 control-label">借閱人</label>
+        <div class="col-md-10">
+            <select id="dropdown_username"></select>
+        </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px">
+        <label class="col-md-2 control-label">借閱狀態</label>
+        <div class="col-md-10">
+            <select id="dropdown_codename"></select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div class="col-md-2">
+        </div>
+        <div class="col-md-10">
+            <input type="button" id="search" value="查詢" class="btn btn_search" style="background-color: #99b2db; color:#194284" />
+            <input type="button" id="create" value="新增" class="btn" style="background-color: #CCDDFF; color:#194284" />
+            <input type="button" id="clean" value="清除" class="btn" style="background-color: #CCDDFF; color:#194284" />
+        </div>
+    </div>
+
+    <div id="search_grid"></div>
+    <div class="uk-card  uk-text-left" id="record_window" style="display:none">
+        <div id="book_record_grid"></div>
+    </div>
+</div>
+
+<div class="form-horizontal">
+    <div class="uk-card  uk-text-left" id="update_window" style="display:none">
+        <div class="form-group" style="margin-bottom:20px;margin-top:20px">
+            <label class="control-label col-md-2 required">書名</label>
+            <div class="col-md-10">
+                <input id="ed_book_name" type="text" class="form-control" />
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="control-label col-md-2 required">作者</label>
+            <div class="col-md-10">
+                <input id="ed_book_author" type="text" class="form-control" />
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="control-label col-md-2 required">出版商</label>
+            <div class="col-md-10">
+                <input id="ed_book_publisher" class="form-control" />
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="control-label col-md-2 required">內容簡介</label>
+            <div class="col-md-10">
+                <textarea id="ed_book_note" onkeyup="WordsDeal();" cols="80" rows="8"></textarea>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="control-label col-md-2 required">購書日期</label>
+            <div class="col-md-10">
+                <input id="ed_bought_date" type="date" />
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="col-md-2 control-label">圖書類別</label>
+            <div class="col-md-10">
+                <select id="ed_dropdown_classname"></select>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="col-md-2 control-label">借閱狀態</label>
+            <div class="col-md-10">
+                <select id="ed_dropdown_codename"></select>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="col-md-2 control-label">借閱人</label>
+            <div class="col-md-10">
+                <select id="ed_dropdown_username"></select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" class="btn" id="save_edit_btn" value="存檔" style="background-color: #99b2db; color:#194284" />
+                <input type="button" class="btn" id="delete_edit_btn" value="刪除" href="#" style="background-color: #99b2db; color:#194284">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var user = @Html.Raw(Json.Encode(ViewBag.user));
+    var bookid;
+    if (user != "manager") {
+        var Create = $("#create").kendoButton({
+            enable: false
+        });
+    }
+    $("#create").click(function () {
+        $.ajax({
+            type: "post",
+            url: "Getifo",
+            data: { "User": user },
+            success: function (response) {
+                if (response == true) {
+                    window.location.href = "InsertBook"
+                }
+            }
+        });
+    })
+    $("#clean").click(function () {
+        $.ajax({
+            type: "post",
+            url: "Getifo",
+            data: { "User": user },
+            success: function (response) {
+                if (response == true) {
+                    window.location.href = "Index"
+                }
+            }
+        });
+    })
+    //kendoDropDownList
+    $(function () {
+        $("#record_window").kendoWindow({
+            title: "借閱紀錄",
+            width: "50%",
+            visible: false,
+            modal: true,
+            action: ["Close"]
+        });
+
+        $("#dropdown_classname").kendoDropDownList({
+            dataTextField: "Text",
+            dataValueField: "Value",
+            optionLabel: "請選擇",
+            dataSource: {
+                transport: {
+                    read: {
+                        url: "GetClassNameDropDownList",
+                        type: "post",
+                        dataType: "json"
+                    }
+                }
+            }
+        })
+        $("#dropdown_username").kendoDropDownList({
+            dataTextField: "Text",
+            dataValueField: "Value",
+            optionLabel: "請選擇",
+            dataSource: {
+                transport: {
+                    read: {
+                        url: "GetUserNameDropDownList",
+                        type: "post",
+                        dataType: "json"
+                    }
+                }
+            }
+        })
+        $("#dropdown_codename").kendoDropDownList({
+            dataTextField: "Text",
+            dataValueField: "Value",
+            optionLabel: "請選擇",
+            dataSource: {
+                transport: {
+                    read: {
+                        url: "GetCodeNameDropDownList",
+                        type: "post",
+                        dataType: "json"
+                    }
+                }
+            }
+        })
+        // kendoGrid
+        var getgridcount = 0;
+        $(".btn_search").click(function () {
+            if (getgridcount != 0) {
+                $("#search_grid").data('kendoGrid').destroy();
+            }
+            getgridcount++;
+            var search_data = {
+                "BookName": $("#book_name").val(),
+                "ClassNameID": $("#dropdown_classname").data("kendoDropDownList").value(),
+                "UserName": $("#dropdown_username").data("kendoDropDownList").value(),
+                "CodeID": $("#dropdown_codename").data("kendoDropDownList").value()
+            };
+
+
+            if (user == "manager") {
+                $("#search_grid").kendoGrid({
+                    height: 500,
+                    columns: [
+                        { field: "BookClassName", title: "圖書類別", width: "10%" },
+                        { field: "BookName", title: "書名", width: "30%" },
+                        { field: "BookBoughtDate", title: "購書日期", width: "10%" },
+                        { field: "CodeName", title: "借閱狀態", width: "8%" },
+                        { field: "UserName", title: "借閱人", width: "12%" },
+                        { command: { text: "借閱紀錄", click: booklendrecord }, title: " ", width: "8%", },
+                        { command: { text: "修改", click: updatebook }, title: " ", width: "8%" },
+                        { command: { text: "刪除", click: deleteBook }, title: " ", width: "8%" }
+                    ],
+                    dataSource: {
+                        transport: {
+                            read: {
+                                url: "GetGridData",
+                                type: "post",
+                                dataType: "json",
+                                data: search_data
+                            }
+                        }
+                    }
+                })
+            } else {
+                $("#search_grid").kendoGrid({
+                    height: 500,
+                    columns: [
+                        { field: "BookClassName", title: "圖書類別", width: "10%" },
+                        { field: "BookName", title: "書名", width: "30%" },
+                        { field: "BookBoughtDate", title: "購書日期", width: "10%" },
+                        { field: "CodeName", title: "借閱狀態", width: "8%" },
+                        { field: "UserName", title: "借閱人", width: "12%" },
+                        { command: { text: "借閱紀錄", click: booklendrecord }, title: " ", width: "8%", },
+                        { command: { text: "修改", click: updatebook }, title: " ", width: "8%" },
+                        { command: { text: "刪除", click: deleteBook }, title: " ", width: "8%" }
+                    ],
+                    dataSource: {
+                        transport: {
+                            read: {
+                                url: "GetGridData",
+                                type: "post",
+                                dataType: "json",
+                                data: search_data
+                            }
+                        }
+                    }
+                })
+            }
+
+        });
+    });
+
+
+    // 刪除書本
+    function deleteBook(e) {
+        if (user == "manager") {
+        var Check = confirm('確定是否刪除這筆紀錄?');
+        if (Check == true) {
+            e.preventDefault();
+            var bookId = this.dataItem($(e.currentTarget).closest("tr")).BookID
+            var codeName = this.dataItem($(e.currentTarget).closest("tr")).CodeName
+            if (codeName == "已借出" || codeName == "已借出(未領)") {
+                alert("此書已借出");
+            } else {
+                $.ajax({
+                    type: "POST",
+                    url: "DeleteBook",
+                    data: { "BookID": bookId },
+                    dataType: "json",
+                    success: function (response) {
+                        if (response == true) {
+                            alert("圖書已刪除");
+                            $("#search_grid").data("kendoGrid").dataSource.read();
+                        }
+                    },
+                    error: function (error) {
+                        alert("系統發生錯誤");
+                    }
+                });
+            }
+        }
+    }
+    }
+    //借閱紀錄
+    function booklendrecord(e) {
+        e.preventDefault();
+        var bookId = this.dataItem($(e.currentTarget).closest("tr")).BookID;
+        $("#book_record_grid").kendoGrid({
+            dataSource: {
+                transport: {
+                    read: {
+                        method: "post",
+                        url: "LendBookRecord",
+                        dataType: "json",
+                        data: { "BookID": bookId }
+                    }
+                },
+                pageSize: 20,
+            },
+            height: 350,
+            columns: [
+                { field: "BookName", title: "書名", width: "30%" },
+                { field: "UserID", title: "借閱人員編號", width: "20%" },
+                { field: "UserName", title: "借閱人", width: "25%" },
+                { field: "LendDate", title: "借閱日期", width: "25%" }
+            ]
+        });
+        $('#record_window').data("kendoWindow").center().open();
+    }
+    //修改data
+    function updatebook(e) {
+        if (user == "manager") {
+        //todo修改 刪除書本
+            $("#delete_edit_btn").unbind('click');
+            $("#delete_edit_btn").click(function () {
+            if (book.BookStatus == "已借出" || book.BookStatus == "已借出(未領)") {
+                alert("該本書借出中無法刪除!");
+            } else if (confirm("是否要刪除圖書") == true) {
+                $.ajax({
+                    type: "POST",
+                    url: "DeleteBook",
+                    data: { "BookID": bookid },
+                    dataType: "json",
+                }).done(function (e) {
+                    if (e == true) {
+                        $("#book_grid").data("kendoGrid").dataSource.read();
+                        $("#edit_window").data("kendoWindow").close();
+                    }
+
+                })
+                alert("delete success");
+
+            }
+            return false;
+        });
+        $("#update_window").kendoWindow({
+            title: "資料修改",
+            width: "50%",
+            visible: false,
+            modal: true,
+            action: ["Close"]
+        });
+         $("#ed_dropdown_username").kendoDropDownList({
+            dataTextField: "Text",
+            dataValueField: "Value",
+            optionLabel: "請選擇",
+            dataSource: {
+                transport: {
+                    read: {
+                        url: "GetUserNameDropDownList",
+                        type: "post",
+                        dataType: "json"
+                    }
+                }
+            }
+        })
+        $("#ed_dropdown_codename").kendoDropDownList({
+            dataTextField: "Text",
+            dataValueField: "Value",
+            optionLabel: "請選擇",
+            dataSource: {
+                transport: {
+                    read: {
+                        url: "GetCodeNameDropDownList",
+                        type: "post",
+                        dataType: "json"
+                    }
+                }
+            }
+        })
+        $("#ed_dropdown_classname").kendoDropDownList({
+            dataTextField: "Text",
+            dataValueField: "Value",
+            optionLabel: "請選擇",
+            dataSource: {
+                transport: {
+                    read: {
+                        url: "GetClassNameDropDownList",
+                        type: "post",
+                        dataType: "json"
+                    }
+                }
+            }
+        })
+            var search_data = {
+                "BookName": $("#book_name").val(),
+                "ClassNameID": $("#dropdown_classname").data("kendoDropDownList").value(),
+                "UserName": $("#dropdown_username").data("kendoDropDownList").value(),
+                "CodeID": $("#dropdown_codename").data("kendoDropDownList").value()
+            };
+
+
+            if (user == "manager") {
+                $("#search_grid").kendoGrid({
+                    height: 500,
+                    columns: [
+                        { field: "BookClassName", title: "圖書類別", width: "10%" },
+                        { field: "BookName", title: "書名", width: "30%" },
+                        { field: "BookBoughtDate", title: "購書日期", width: "10%" },
+                        { field: "CodeName", title: "借閱狀態", width: "8%" },
+                        { field: "UserName", title: "借閱人", width: "12%" },
+                        { command: { text: "借閱紀錄", click: booklendrecord }, title: " ", width: "8%", },
+                        { command: { text: "修改", click: updatebook }, title: " ", width: "8%" },
+                        { command: { text: "刪除", click: deleteBook }, title: " ", width: "8%" }
+                    ],
+                    dataSource: {
+                        transport: {
+                            read: {
+                                url: "GetGridData",
+                                type: "post",
+                                dataType: "json",
+                                data: search_data
+                            }
+                        }
+                    }
+                })
+            } else {
+                $("#search_grid").kendoGrid({
+                    height: 500,
+                    columns: [
+                        { field: "BookClassName", title: "圖書類別", width: "10%" },
+                        { field: "BookName", title: "書名", width: "30%" },
+                        { field: "BookBoughtDate", title: "購書日期", width: "10%" },
+                        { field: "CodeName", title: "借閱狀態", width: "8%" },
+                        { field: "UserName", title: "借閱人", width: "12%" },
+                        { command: { text: "借閱紀錄", click: booklendrecord }, title: " ", width: "8%", },
+                        { command: { text: "修改", click: updatebook }, title: " ", width: "8%" },
+                        { command: { text: "刪除", click: deleteBook }, title: " ", width: "8%" }
+                    ],
+                    dataSource: {
+                        transport: {
+                            read: {
+                                url: "GetGridData",
+                                type: "post",
+                                dataType: "json",
+                                data: search_data
+                            }
+                        }
+                    }
+                })
+            }
+           
+        $("#ed_bought_date").kendoDatePicker({
+            value: new Date(),
+            format: "yyyy/MM/dd"
+        });
+            $("#save_edit_btn").unbind('click');
+            $("#save_edit_btn").click(function () {
+
+                var data = {
+                    "BookID": bookid,
+                    "BookName": $("#ed_book_name").val(),
+                    "BookAuthor": $("#ed_book_author").val(),
+                    "BookPublisher": $("#ed_book_publisher").val(),
+                    "BookNote": $("#ed_book_note").val(),
+                    "BookBoughtDate": kendo.toString($("#ed_bought_date").data("kendoDatePicker").value(), "yyyy-MM-dd"),
+                    "BookClassID": $("#ed_dropdown_classname").data("kendoDropDownList").value(),
+                    "CodeID": $("#ed_dropdown_codename").data("kendoDropDownList").value(),
+                    "UserID": $("#ed_dropdown_username").data("kendoDropDownList").value()
+                };
+                if (confirm("是否確定修改書籍") == true) {
+                    $.ajax({
+                        type: "POST",
+                        url: "UpdateData",
+                        data: data,
+                        dataType: "json",
+                    }).done(function (data) {
+                        $("#update_window").data("kendoWindow").close();
+                        $("#search_grid").data("kendoGrid").dataSource.read();
+                    }
+                    )
+                }
+            })
+        e.preventDefault;
+         bookid = this.dataItem($(e.currentTarget).closest("tr")).BookID;
+        var book = this.dataItem($(e.currentTarget).closest("tr"));
+        $.ajax({
+            type: "POST",
+            url: "GetBookData",
+            data: { "BookID": bookid },
+            dataType: "json",
+            success: function (data) {
+                $("#ed_book_name").val(data.BookName);
+                $("#ed_book_author").val(data.BookAuthor);
+                $("#ed_book_publisher").val(data.BookPublisher);
+                $("#ed_book_note").val(data.BookNote);
+                $("#ed_bought_date").data("kendoDatePicker").value(data.BookBoughtDate);
+                $("#ed_dropdown_classname").data("kendoDropDownList").value(data.BookClassID);
+                $("#ed_dropdown_codename").data("kendoDropDownList").value(data.CodeID);
+                $("#ed_dropdown_username").data("kendoDropDownList").value(data.UserID);
+            }
+        })
+        $("#update_window").data("kendoWindow").center().open();
+    }
+    }
+
+</script>

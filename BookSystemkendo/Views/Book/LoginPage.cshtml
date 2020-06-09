@@ -1,0 +1,70 @@
+﻿
+@{
+    ViewBag.Title = "LoginPage";
+    Layout = "~/Views/Shared/_LoginLayout.cshtml";
+}
+    <div style="margin-top:10px">
+        <div style="margin: auto; position: absolute;left: 0; right: 0; top: 0px;width:350px;height:360px;border:5px solid; margin-top:150px; border-color:rgba(25, 66, 132, 0.52);border-radius:10px; ">
+            <div>
+                <!--<div style="margin: auto; position: absolute;left: 0; right: 0; top: 0px;border:5px solid;margin-top:10px">-->
+                <img style="width:190px;display: block;margin:0 auto;margin-top:20px;margin-left:75px"  src="https://i.imgur.com/zx9WZ2S.png">
+            </div>
+            <div style="margin: auto; position: absolute;left: 70px; right: 70px; top: 0px;;margin-top:180px;">
+                <!--<label for="username">Username:</label><br>-->
+                <input style="height:30px;width:200px;" placeholder="ID" type="text" id="username" value="test" />
+            </div>
+            <div style="margin: auto; position: absolute;left: 70px; right: 70px; top: 0px;margin-top:240px">
+                <!--<label for="password">Password:</label><br>-->
+                <input style="height:30px;width:200px;" placeholder="PASSWORD" type="password" id="password" value="0000" />
+            </div>
+            <div style="margin: auto; position: absolute;left: 70px; right: 70px; top: 0px;margin-top:300px">
+                <input type="button" id="login" value="Login" class="btn" data-role="button" style="background-color:#CCDDFF;color:#194284;height:30px;width:200px;text-align:center;" />
+            </div>
+        </div>
+    </div>
+
+    <script>
+    //按下登入按鈕取得帳號密碼
+    $("#login").click(function (e) {
+        var login_data = {
+            "Username": $("#username").val(),
+            "Password": $("#password").val(),
+        }
+        $.ajax({
+            type: "POST",
+            url: "UserLogin",
+            data: login_data,
+            dataType: "json",
+            success: function (response) {
+                if (response == true) {;
+                    alert("登入成功");
+                    var User = "manager";
+                    $.ajax({
+                        type: "post",
+                        url: "Getifo",
+                        data: { "User": User },
+                        success: function (response) {
+                            if (response == true) {
+                                window.location.href = "Index"
+                            }
+                        }
+                    });
+                }
+                else {
+                    alert("登入失敗");
+                    $("#username").val("");
+                    $("#password").val("");
+                }
+            },
+            error: function (error) {
+                alert("請重新整理頁面");
+            }
+        });
+
+    })
+    </script>
+
+
+
+
+

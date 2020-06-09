@@ -1,0 +1,155 @@
+﻿
+@{
+    ViewBag.Title = "InsertBook";
+    Layout = "~/Views/Shared/_Layout_logout.cshtml";
+}
+
+<h2>InsertBook</h2>
+
+<div class="form-horizontal">
+    <form id="addBookForm" data-role="validator" novalidate="novalidate">
+        <div class="form-group" style="margin-bottom:20px;margin-top:20px">
+            <label class="control-label col-md-2 required">書名</label>
+            <div class="col-md-10">
+                <input id="book_name" name="BookName" type="text" class="form-control" required validationMessage="請輸入書名" />
+                <span class="k-invalid-msg" data-for="BookName"></span>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="control-label col-md-2 required">作者</label>
+            <div class="col-md-10">
+                <input id="book_author" name="Author" type="text" class="form-control" required validationMessage="請輸入作者" />
+                <span class="k-invalid-msg" data-for="Author"></span>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="control-label col-md-2 required">出版商</label>
+            <div class="col-md-10">
+                <input id="book_publisher" name="Publisher" class="form-control" required validationMessage="請輸入出版商" />
+                <span class="k-invalid-msg" data-for="Publisher"></span>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="control-label col-md-2 required">內容簡介</label>
+            <div class="col-md-10">
+                <textarea id="book_note" name="Note" onkeyup="WordsDeal();" cols="80" rows="8" required validationMessage="請輸入內容簡介"></textarea>
+                <div>
+                    <span class="k-invalid-msg" data-for="Note"></span>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="control-label col-md-2 required">購書日期</label>
+            <div class="col-md-10">
+                <input id="bought_date" type="date" />
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px">
+            <label class="col-md-2 control-label">圖書類別</label>
+            <div class="col-md-10">
+                <select id="dropdown_classname" name="classname" required validationMessage="請選擇圖書類別"></select>
+                <div>
+                    <span class="k-invalid-msg" data-for="classname"></span>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <input type="button" value="存檔" class="btn btn_create" style="background-color: #99b2db; color:#194284" />
+        </div>
+    </div>
+</div>
+<div>
+    <input type="button" value="返回" id="backtoindex" class="btn" style="background-color: #99b2db; color:#194284" />
+</div>
+<script>
+    var user = @Html.Raw(Json.Encode(ViewBag.user));
+    $(function () {
+        $("#addBookForm").kendoValidator();
+        //kendoDatePicker
+        $("#bought_date").kendoDatePicker({
+            value: new Date(),
+            format: "yyyy/MM/dd"
+        });
+
+        //kendoDropDownList
+        $("#dropdown_classname").kendoDropDownList({
+            dataTextField: "Text",
+            dataValueField: "Value",
+            optionLabel: "請選擇",
+            dataSource: {
+                transport: {
+                    read: {
+                        url: "GetClassNameDropDownList",
+                        type: "post",
+                        dataType: "json"
+                    }
+                }
+            }
+        });
+
+        //新增按鍵
+        $(".btn_create").click(function (e) {
+            var validator = $("#addBookForm").kendoValidator().data("kendoValidator");
+            if (validator.validate()) {
+                var create_data = {
+                    "BookName": $("#book_name").val(),
+                    "BookAuthor": $("#book_author").val(),
+                    "BookPublisher": $("#book_publisher").val(),
+                    "BookNote": $("#book_note").val(),
+                    "BookBoughtDate": kendo.toString($("#bought_date").data("kendoDatePicker").value(), "yyyy-MM-dd"),
+                    "BookClassID": $("#dropdown_classname").data("kendoDropDownList").value(),
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "InsertBook",
+                    data: create_data,
+                    dataType: "json",
+                    success: function (response) {
+                        if (response == true) {
+                            alert("圖書已新增");
+                            $("#book_name").val("");
+                            $("#book_author").val("");
+                            $("#book_publisher").val("");
+                            $("#book_note").val("");
+                            $("#dropdown_classname").data("kendoDropDownList").value("");
+                        }
+                    },
+                    error: function (error) {
+                        alert("系統發生錯誤");
+                    }
+                });
+            }
+        });
+    });
+    //textarea 字數限制
+    function WordsDeal() {
+        var curLength = $("#book_note").val().length;
+        if (curLength > 1000) {
+            var num = $("#book_note").val().substr(0, 1000);
+            $("#book_note").val(num);
+            alert("超過字數限制(1000字)，多出的字將被移除！");
+        }
+    }
+    $("#backtoindex").click(function () {
+        $.ajax({
+            type: "post",
+            url: "Getifo",
+            data: { "User": user },
+            success: function (response) {
+                if (response == true) {
+                    window.location.href = "Index"
+                }
+            }
+        });
+    })
+</script>
+
